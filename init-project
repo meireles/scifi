@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+
+# Exit on any errors:
+set -e
+
+
+################################################################################
+# Input arguments and default variables
+################################################################################
+
+
+########################################
+# Arguments
+########################################
+
+# -d <string> local directory where to create the research project
+# -t <string> url for the template
+# -b <string> branch of the template to clone
+# -r <string> name of repository in the remote
+# -u <string> username in remote host
+# -h          help
+# -p          push local repo to remote
+
+########################################
+# Default variables
+########################################
+
+# create a new remote. set to true if -d or -r are specified
+nrt=false  
+
+# user input
+dir=""
+tpl="https://bitbucket.org/meireles/research_project_template"
+bch="master"
+rep=""
+usr=""
+key=""
+hst=""
+url=""
+psh=false
+
+
+################################################################################
+# Functions
+################################################################################
+
+usemsg(){
+	echo "Usage: $0 -d <dir name> [-t <template>] [-b <branch>] [-u <remote user>] [-r <remote repo>] [-p] [-h]" 1>&2;
+}
+
+usage(){
+    usemsg;
+	exit 1;
+}
+
+help(){
+	echo "" 1>&2;
+	echo "************************************************************" 1>&2;
+	echo "Instantiates a research project from a remote git template" 1>&2;
+	echo "************************************************************" 1>&2;
+	echo "" 1>&2;
+	usemsg;
+	echo "" 1>&2;
+	echo "case 1: Instantiate a local repo only with the default template";
+	echo "	Usage: $0 -d <dir name>" 1>&2;
+	echo "" 1>&2;
+	echo "case 2: Create local repo and a remote in host. -r defaults to -d if not specified; -p pushes the local repo to remote.";
+	echo "	Usage: $0 -d <dir name> -u <username remote>" 1>&2;
+}
+
+make_hst(){
+    # -s is silent (optional)
+	hst="curl -s --user $usr:$key https://api.bitbucket.org/1.0/repositories/ --data name=$rep"
+}
+
+make_url(){
+	url="https://bitbucket.org/$usr/$rep"
+}
+
+################################################################################
+# Get Arguments
+################################################################################
+
+while getopts "d:t:b:u:r:ph" args; do
+    case "${args}" in
+        d)
+            dir=${OPTARG};
+            rep=$dir;
+            ;;
+        t)
+        	tpl=${OPTARG};
+            ;;
+        b)
+        	bch=${OPTARG};
+            ;;
+        u)
+        	usr=${OPTARG};
+        	nrt=true;
+            ;;
+        r)
+			rep=${OPTARG};
+			nrt=true;
+            ;;
+        p)
+        	psh=true;
+        	;;
+        h)
+        	help;
+        	exit 1;
+        	;;
+        \?)
+        	echo "Unknown option: -${OPTARG}" >&2;
+        	exit 1;
+        	;;
+        :)
+        	echo "Missing argument for -${OPTARG}" >&2;
+        	exit 1;
+        	;;
+        *)
+        	echo "Unimplemented option: -${OPTARG}" >&2;
+        	exit 1;
+        	;;
+    esac
+done
+
+
+
+if [[ -z $dir ]]; then
+  echo "[-d <dir name>] must be provided";
+  usage;
+  exit 1;
+fi
+
+
+
+if [[ (-z $rep || -z $usr) && nrt = true ]]; then
+  echo "[-u <user>] and [-r <remote repo>] must be provided";
+  usage;
+  exit 1;
+fi
+
+
+################################################################################
+# Execute stuff
+################################################################################
+
+echo "************************************************************"
+echo "Instantiating new research project from template"
+echo "************************************************************"
+echo ""
+    
+########################################
+# Clone template and move to dir
+########################################
+
+echo "1. Cloning template:"
+echo ""
+
+git clone "$tpl" -b "$bch" "$dir";
+cd "$dir";
+
+########################################
+# Rename branch
+########################################
+# In case -b was specified and $bch != master
+git branch -m "$bch" master
+
+########################################
+# Unset remote
+########################################
+# So it doens't point to the template's remote
+echo ""
+echo "1.1. Unsetting remote origin."
+git remote remove origin
+
+########################################
+# If nrt (new remote is true)
+########################################
+
+if [[ $nrt == true ]];
+	then
+		echo ""
+		echo "2. Creating a remote repo '$rep' for user '$usr'..."    
+		
+		# Get the user's password
+		read -s -p password: key
+    	echo ""
+
+    	# Create the complete call to the host's api and call it
+    	make_hst
+		($hst)
+		echo ""
+    
+    	# create an https url for the remote host and set the local 'origin'
+		make_url
+		git remote add origin "$url"
+	else
+		:;
+fi
+
+
+########################################
+# Call init-project
+########################################
+
+# Read init-project for details of what it does.
+# Importantly, init-project should squash all commits and remove itself
+"./init-project"
+
+
+########################################
+# If -p, push repo to new remote
+########################################
+
+if [[ $psh == true && $nrt == true ]];
+	then
+		echo ""
+		echo "3. Pushing local repo to remote.";
+		echo ""
+		
+		git push origin master
+	else
+		:;
+fi
