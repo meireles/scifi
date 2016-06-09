@@ -25,6 +25,7 @@ set -e
 # Default variables
 ########################################
 
+script=$(basename $0)
 # create a new remote. set to true if -d or -r are specified
 nrt=false  
 
@@ -45,7 +46,7 @@ psh=false
 ################################################################################
 
 usemsg(){
-	echo "Usage: $0 -d <dir name> [-t <template>] [-b <branch>] [-u <remote user>] [-r <remote repo>] [-p] [-h]" 1>&2;
+	echo "Usage: $script -d <dir name> [-t <template>] [-b <branch>] [-u <remote user>] [-r <remote repo>] [-p] [-h]" 1>&2;
 }
 
 usage(){
@@ -62,10 +63,10 @@ help(){
 	usemsg;
 	echo "" 1>&2;
 	echo "case 1: Instantiate a local repo only with the default template";
-	echo "	Usage: $0 -d <dir name>" 1>&2;
+	echo "	Usage: $script -d <dir name>" 1>&2;
 	echo "" 1>&2;
 	echo "case 2: Create local repo and a remote in host. -r defaults to -d if not specified; -p pushes the local repo to remote.";
-	echo "	Usage: $0 -d <dir name> -u <username remote>" 1>&2;
+	echo "	Usage: $script -d <dir name> -u <username remote>" 1>&2;
 }
 
 make_hst(){
