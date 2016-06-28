@@ -23,7 +23,7 @@ function scifi(){
 	}
 
 	__usage(){
-		echoerr "usage: scifi -n <dir name> [(-u <remote user> -r <'bitbucket'|'github'>)] [-p] [-h]"
+		echoerr "usage: scifi -n <dir name> [(-u <remote user> -r <'bitbucket'|'github'>)] [-a <'private'|'public'>] [-p] [-h]"
 	}
 
 	__help(){
@@ -31,6 +31,7 @@ function scifi(){
 		echoerr "  -n <string> name for local directory where to create the research project"
 		echoerr "  -u <string> username in remote host"
 		echoerr "  -r <string> remote host service: <'bitbucket'|'github'>"
+		echoerr "  -a <string> access type for remote <'private'|'public'>"
 		echoerr "  -h          help"
 		echoerr "  -p          push local repo to remote"
 		echoerr ""
@@ -57,6 +58,7 @@ function scifi(){
 	local __usr=""
 	local __host=""
 	local __push=false
+	local __accs="private"
 
 	############################################################################
 	# Get Arguments
@@ -64,7 +66,7 @@ function scifi(){
 
 	local OPTIND=0
 
-	while getopts "n:u:r:ph" args; do
+	while getopts "n:u:r:a:ph" args; do
 		case "${args}" in
 			n)
 				__dir="${OPTARG}";
@@ -75,6 +77,10 @@ function scifi(){
 				;;
 			r)
     	    	[[ ( "${OPTARG}" == "bitbucket" || "${OPTARG}" == "github" ) ]]  && __host="${OPTARG}" || __usage
+				__create_remote=true;
+				;;
+			a)
+    	    	[[ ( "${OPTARG}" == "private" || "${OPTARG}" == "public" ) ]]  && __accs="${OPTARG}" || __usage
 				__create_remote=true;
 				;;
 			p)
@@ -115,7 +121,7 @@ function scifi(){
 			echoerr "[-n <dir name>] must be provided";
 		  	__usage;
 			return 1;
-		elif [[ (-z "$__host" || -z "$__usr") && "$__create_remote" == true ]]; then
+		elif [[ (-z "$__host" || -z "$__usr" || -z "$__accs") && "$__create_remote" == true ]]; then
 			__exec=false;
 			echo "[-u <user>] and [-r <host>] must be provided";
 			usage;
@@ -145,7 +151,7 @@ function scifi(){
 
 		if [[ "$__create_remote" = true ]]; then
 
-			git_mkremote -n "$__dir" -u "$__usr" -r "$__host"
+			git_mkremote -n "$__dir" -u "$__usr" -r "$__host" -a "$__accs"
 
 			git remote add origin "$git_mkremote_push_url"           # set by make remote
 
