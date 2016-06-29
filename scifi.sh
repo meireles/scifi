@@ -47,7 +47,8 @@ function scifi(){
 
 	local __paper_url="https://github.com/meireles/paper_template"
 	local __proj_url="https://github.com/meireles/research_project_template"
-	local __branch="master"
+
+	local __branch="master"       ## hardcoded for now
 
 	local __create_remote=false   ## set to true if -d or -r are specified
 	local __help=false
@@ -136,6 +137,8 @@ function scifi(){
 	if [[ "$__exec" == true ]]; then
 
 		# Poach the template and move into the repo
+		# the -b and -o params are not useful here since __branch is hardcoded. they're
+		# a good reminder if that changes though.
 		git_poach -t "$__proj_url" -n "$__dir" -b "$__branch" -o
 		cd "$__dir"
 
@@ -153,10 +156,11 @@ function scifi(){
 
 			git_mkremote -n "$__dir" -u "$__usr" -r "$__host" -a "$__accs"
 
-			git remote add origin "$git_mkremote_push_url"           # set by make remote
+			git remote add origin "$git_mkremote_push_url"           ## set by make remote
 
 			if [[ "$__push" == true ]]; then
-				git push origin master
+				## master is hardcoded. may be trouble if I forget the -o flag for git_poach
+				git push -u origin master
 			fi
 		fi
 	fi
